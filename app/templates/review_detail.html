@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Review Detail - AI Law Firm{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+    <a href="/web/dashboard" style="color: var(--primary-light); text-decoration: none; font-size: 0.9rem;">&larr; Dashboard</a>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.1rem;">검토 요청</h2>
+        {% if review.status == 'pending' %}
+        <span class="badge badge-pending">대기중</span>
+        {% elif review.status == 'ai_reviewed' %}
+        <span class="badge badge-ai-reviewed">AI 검토완료</span>
+        {% elif review.status == 'approved' %}
+        <span class="badge badge-approved">승인</span>
+        {% elif review.status == 'rejected' %}
+        <span class="badge badge-rejected">반려</span>
+        {% else %}
+        <span class="badge badge-error">{{ review.status }}</span>
+        {% endif %}
+    </div>
+
+    <div class="meta-row">
+        <div><strong>ID:</strong> {{ review.id }}</div>
+        <div><strong>요청 시간:</strong> {{ review.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+        {% if review.slack_user_id %}
+        <div><strong>Slack User:</strong> {{ review.slack_user_id }}</div>
+        {% endif %}
+    </div>
+
+    <h3 style="font-size: 0.95rem; margin-bottom: 0.5rem;">원본 메시지</h3>
+    <div class="review-content">{{ review.original_message }}</div>
+</div>
+
+{% if review.ai_review %}
+<div class="card">
+    <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">AI 검토 결과</h2>
+    <div class="meta-row">
+        <div><strong>모델:</strong> {{ review.ai_review.model_used }}</div>
+        {% if review.ai_review.input_tokens %}
+        <div><strong>토큰:</strong> {{ review.ai_review.input_tokens }} in / {{ review.ai_review.output_tokens }} out</div>
+        {% endif %}
+    </div>
+    <div class="review-content">{{ review.ai_review.content }}</div>
+</div>
+{% endif %}
+
+{% if review.lawyer_review %}
+<div class="card">
+    <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">변호사 최종 검토</h2>
+    <div class="meta-row">
+        <div><strong>변호사:</strong> {{ review.lawyer_review.lawyer_id }}</div>
+        <div><strong>결정:</strong>
+            {% if review.lawyer_review.decision == 'approved' %}
+            <span class="badge badge-approved">승인</span>
+            {% else %}
+            <span class="badge badge-rejected">반려</span>
+            {% endif %}
+        </div>
+        <div><strong>시간:</strong> {{ review.lawyer_review.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+    </div>
+    {% if review.lawyer_review.final_content %}
+    <h3 style="font-size: 0.95rem; margin: 1rem 0 0.5rem;">최종 의견</h3>
+    <div class="review-content">{{ review.lawyer_review.final_content }}</div>
+    {% endif %}
+    {% if review.lawyer_review.notes %}
+    <h3 style="font-size: 0.95rem; margin: 1rem 0 0.5rem;">메모</h3>
+    <div class="review-content">{{ review.lawyer_review.notes }}</div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if review.status == 'ai_reviewed' %}
+<div class="card">
+    <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">변호사 검토</h2>
+
+    <form method="POST" action="/web/reviews/{{ review.id }}/approve" id="approveForm">
+        <div class="form-group">
+            <label>최종 의견 *</label>
+            <textarea name="final_content" rows="6" placeholder="최종 법률 의견을 작성하세요...">{{ review.ai_review.content if review.ai_review else '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label>메모 (선택)</label>
+            <textarea name="notes" rows="3" placeholder="추가 메모..."></textarea>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <button type="submit" class="btn btn-success">승인</button>
+            <button type="button" class="btn btn-danger" onclick="submitReject()">반려</button>
+        </div>
+    </form>
+
+    <form method="POST" action="/web/reviews/{{ review.id }}/reject" id="rejectForm" style="display: none;">
+        <input type="hidden" name="notes" id="rejectNotes">
+    </form>
+</div>
+
+<script>
+function submitReject() {
+    var notes = document.querySelector('#approveForm textarea[name="notes"]').value;
+    if (!notes.trim()) {
+        alert('반려 시 메모(사유)를 입력해주세요.');
+        return;
+    }
+    document.getElementById('rejectNotes').value = notes;
+    document.getElementById('rejectForm').submit();
+}
+</script>
+{% endif %}
+{% endblock %}

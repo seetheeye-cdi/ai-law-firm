@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - AI Law Firm{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom: 1.5rem;">Dashboard</h1>
+
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-number" style="color: var(--primary-light);">{{ pending_count }}</div>
+        <div class="stat-label">검토 대기</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="color: var(--success);">{{ approved_count }}</div>
+        <div class="stat-label">승인</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="color: var(--danger);">{{ rejected_count }}</div>
+        <div class="stat-label">반려</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total }}</div>
+        <div class="stat-label">전체</div>
+    </div>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.1rem;">검토 목록</h2>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="/web/dashboard" class="btn btn-sm {% if not current_status %}btn-primary{% endif %}" style="{% if current_status %}background: var(--bg); color: var(--text); border: 1px solid var(--border);{% endif %}">전체</a>
+            <a href="/web/dashboard?status=ai_reviewed" class="btn btn-sm {% if current_status == 'ai_reviewed' %}btn-primary{% endif %}" style="{% if current_status != 'ai_reviewed' %}background: var(--bg); color: var(--text); border: 1px solid var(--border);{% endif %}">검토 대기</a>
+            <a href="/web/dashboard?status=approved" class="btn btn-sm {% if current_status == 'approved' %}btn-primary{% endif %}" style="{% if current_status != 'approved' %}background: var(--bg); color: var(--text); border: 1px solid var(--border);{% endif %}">승인</a>
+            <a href="/web/dashboard?status=rejected" class="btn btn-sm {% if current_status == 'rejected' %}btn-primary{% endif %}" style="{% if current_status != 'rejected' %}background: var(--bg); color: var(--text); border: 1px solid var(--border);{% endif %}">반려</a>
+        </div>
+    </div>
+
+    {% if reviews %}
+    <table>
+        <thead>
+            <tr>
+                <th>상태</th>
+                <th>원본 메시지</th>
+                <th>요청 시간</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for review in reviews %}
+            <tr>
+                <td>
+                    {% if review.status == 'pending' %}
+                    <span class="badge badge-pending">대기중</span>
+                    {% elif review.status == 'ai_reviewed' %}
+                    <span class="badge badge-ai-reviewed">AI 검토완료</span>
+                    {% elif review.status == 'approved' %}
+                    <span class="badge badge-approved">승인</span>
+                    {% elif review.status == 'rejected' %}
+                    <span class="badge badge-rejected">반려</span>
+                    {% else %}
+                    <span class="badge badge-error">{{ review.status }}</span>
+                    {% endif %}
+                </td>
+                <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ review.original_message[:100] }}
+                </td>
+                <td style="font-size: 0.85rem; color: var(--text-light);">
+                    {{ review.created_at.strftime('%Y-%m-%d %H:%M') }}
+                </td>
+                <td>
+                    <a href="/web/reviews/{{ review.id }}" class="btn btn-sm btn-primary">상세보기</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="/web/dashboard?page={{ page - 1 }}{% if current_status %}&status={{ current_status }}{% endif %}">이전</a>
+        {% endif %}
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+            <span class="active">{{ p }}</span>
+            {% else %}
+            <a href="/web/dashboard?page={{ p }}{% if current_status %}&status={{ current_status }}{% endif %}">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if page < total_pages %}
+        <a href="/web/dashboard?page={{ page + 1 }}{% if current_status %}&status={{ current_status }}{% endif %}">다음</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p style="text-align: center; padding: 3rem; color: var(--text-light);">검토 요청이 없습니다.</p>
+    {% endif %}
+</div>
+{% endblock %}
