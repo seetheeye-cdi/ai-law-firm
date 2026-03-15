@@ -52,7 +52,7 @@ async def test_get_review_not_found(client, api_headers):
 @pytest.mark.asyncio
 async def test_approve_review(client, api_headers, seed_review):
     with patch("app.services.review_service.slack_service") as mock_slack:
-        mock_slack.reply_to_thread = AsyncMock()
+        mock_slack.send_review_result = AsyncMock()
 
         response = await client.post(
             f"/api/v1/reviews/{seed_review.id}/approve",
@@ -67,13 +67,13 @@ async def test_approve_review(client, api_headers, seed_review):
         assert data["status"] == "approved"
         assert data["lawyer_review"]["decision"] == "approved"
         assert data["lawyer_review"]["lawyer_id"] == "admin"
-        mock_slack.reply_to_thread.assert_called_once()
+        mock_slack.send_review_result.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_approve_review_with_lawyer_key(client, lawyer_headers, seed_review):
     with patch("app.services.review_service.slack_service") as mock_slack:
-        mock_slack.reply_to_thread = AsyncMock()
+        mock_slack.send_review_result = AsyncMock()
 
         response = await client.post(
             f"/api/v1/reviews/{seed_review.id}/approve",
@@ -88,7 +88,7 @@ async def test_approve_review_with_lawyer_key(client, lawyer_headers, seed_revie
 @pytest.mark.asyncio
 async def test_reject_review(client, api_headers, seed_review):
     with patch("app.services.review_service.slack_service") as mock_slack:
-        mock_slack.reply_to_thread = AsyncMock()
+        mock_slack.send_rejection = AsyncMock()
 
         response = await client.post(
             f"/api/v1/reviews/{seed_review.id}/reject",
@@ -103,7 +103,7 @@ async def test_reject_review(client, api_headers, seed_review):
 @pytest.mark.asyncio
 async def test_approve_already_approved(client, api_headers, seed_review):
     with patch("app.services.review_service.slack_service") as mock_slack:
-        mock_slack.reply_to_thread = AsyncMock()
+        mock_slack.send_review_result = AsyncMock()
 
         # First approve
         await client.post(

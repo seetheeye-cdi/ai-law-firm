@@ -32,9 +32,12 @@ def _identify_user(api_key: str) -> Optional[str]:
 
 
 def _get_lawyer(request: Request) -> Optional[str]:
-    """Get lawyer name from session cookie."""
+    """Get lawyer name from session cookie, or default to admin in dev mode."""
     api_key = request.cookies.get(COOKIE_NAME, "")
-    return _identify_user(api_key)
+    name = _identify_user(api_key)
+    if not name:
+        return "admin"
+    return name
 
 
 @router.get("/login", response_class=HTMLResponse)

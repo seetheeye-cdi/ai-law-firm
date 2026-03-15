@@ -62,10 +62,9 @@ class ReviewService:
         review_request.status = "ai_reviewed"
         await db.commit()
 
-        await slack_service.reply_to_thread(
+        await slack_service.send_review_complete(
             channel,
             thread_ts or message_ts,
-            "✅ AI 법률 검토가 완료되었습니다. 담당 변호사가 검토 후 최종 의견을 드리겠습니다.",
             bot_token=client.slack_bot_token,
         )
         await slack_service.notify_lawyer(review_request, ai_review)
@@ -139,10 +138,11 @@ class ReviewService:
         await db.refresh(review_request)
 
         client = review_request.client
-        await slack_service.reply_to_thread(
+        await slack_service.send_review_result(
             review_request.slack_channel_id,
             review_request.slack_thread_ts,
-            f"⚖️ *법률 검토 완료*\n\n{final_content}",
+            lawyer_id=lawyer_id,
+            final_content=final_content,
             bot_token=client.slack_bot_token,
         )
         return await self.get_review(db, review_id)
@@ -173,10 +173,11 @@ class ReviewService:
         await db.refresh(review_request)
 
         client = review_request.client
-        await slack_service.reply_to_thread(
+        await slack_service.send_rejection(
             review_request.slack_channel_id,
             review_request.slack_thread_ts,
-            "담당 변호사가 추가 검토를 진행하고 있습니다. 별도로 연락드리겠습니다.",
+            lawyer_id=lawyer_id,
+            notes=notes,
             bot_token=client.slack_bot_token,
         )
         return await self.get_review(db, review_id)

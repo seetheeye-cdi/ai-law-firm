@@ -47,9 +47,9 @@ def register_slack_handlers(slack_app: AsyncApp):
                 )
                 return
 
-            await say(
-                text="🔍 법률 검토를 시작합니다. 잠시만 기다려주세요...",
-                thread_ts=thread_ts,
+            from app.services.slack_service import slack_service
+            await slack_service.send_review_pending(
+                channel, thread_ts, bot_token=client.slack_bot_token,
             )
 
             try:

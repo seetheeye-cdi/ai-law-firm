@@ -12,9 +12,9 @@ async def test_root_redirect(client):
 
 @pytest.mark.asyncio
 async def test_login_page(client):
-    response = await client.get("/web/login")
-    assert response.status_code == 200
-    assert "AI Law Firm" in response.text
+    # With dev mode (no auth), login redirects to dashboard
+    response = await client.get("/web/login", follow_redirects=False)
+    assert response.status_code == 302
 
 
 @pytest.mark.asyncio
@@ -41,16 +41,7 @@ async def test_login_success(client, api_headers):
 
 
 @pytest.mark.asyncio
-async def test_dashboard_requires_auth(client):
-    response = await client.get("/web/dashboard", follow_redirects=False)
-    assert response.status_code == 302
-    assert "/web/login" in response.headers["location"]
-
-
-@pytest.mark.asyncio
-async def test_dashboard_with_auth(client, seed_review):
-    # Login first
-    client.cookies.set("lawyer_session", "test-api-key")
+async def test_dashboard_accessible(client, seed_review):
     response = await client.get("/web/dashboard")
     assert response.status_code == 200
     assert "Dashboard" in response.text
@@ -69,7 +60,7 @@ async def test_approve_via_web(client, seed_review):
     client.cookies.set("lawyer_session", "test-api-key")
 
     with patch("app.services.review_service.slack_service") as mock_slack:
-        mock_slack.reply_to_thread = AsyncMock()
+        mock_slack.send_review_result = AsyncMock()
 
         response = await client.post(
             f"/web/reviews/{seed_review.id}/approve",
@@ -81,7 +72,7 @@ async def test_approve_via_web(client, seed_review):
         )
         assert response.status_code == 302
         assert "Approved" in response.headers["location"]
-        mock_slack.reply_to_thread.assert_called_once()
+        mock_slack.send_review_result.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -89,7 +80,7 @@ async def test_reject_via_web(client, seed_review):
     client.cookies.set("lawyer_session", "test-api-key")
 
     with patch("app.services.review_service.slack_service") as mock_slack:
-        mock_slack.reply_to_thread = AsyncMock()
+        mock_slack.send_rejection = AsyncMock()
 
         response = await client.post(
             f"/web/reviews/{seed_review.id}/reject",

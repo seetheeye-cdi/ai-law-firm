@@ -21,7 +21,7 @@ async def test_process_review_request_success(db_session, seed_client):
         patch("app.services.review_service.slack_service") as mock_slack,
     ):
         mock_claude.generate_legal_review = AsyncMock(return_value=mock_claude_result)
-        mock_slack.reply_to_thread = AsyncMock()
+        mock_slack.send_review_complete = AsyncMock()
         mock_slack.notify_lawyer = AsyncMock()
 
         await service.process_review_request(
@@ -35,7 +35,7 @@ async def test_process_review_request_success(db_session, seed_client):
         )
 
         mock_claude.generate_legal_review.assert_called_once_with("계약서 검토 요청")
-        mock_slack.reply_to_thread.assert_called_once()
+        mock_slack.send_review_complete.assert_called_once()
         mock_slack.notify_lawyer.assert_called_once()
 
 
