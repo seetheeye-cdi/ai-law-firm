@@ -2,7 +2,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str
+    DATABASE_URL: str = "sqlite+aiosqlite:///./ai_law_firm.db"
+    BASE_URL: str = "http://localhost:8000"
     SLACK_SIGNING_SECRET: str
     SLACK_BOT_TOKEN: str
     LAWYER_NOTIFICATION_CHANNEL: str

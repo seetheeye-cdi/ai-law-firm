@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
@@ -7,6 +8,7 @@ from slack_bolt.async_app import AsyncApp
 
 from app.api.routes import clients, health, reviews
 from app.config import settings
+from app.database import Base, engine
 from app.slack.handlers import register_slack_handlers
 from app.web.routes import router as web_router
 
@@ -23,8 +25,18 @@ slack_app = AsyncApp(
 register_slack_handlers(slack_app)
 slack_handler = AsyncSlackRequestHandler(slack_app)
 
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    # Startup: auto-create tables for SQLite (local dev)
+    if settings.DATABASE_URL.startswith("sqlite"):
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    yield
+
+
 # FastAPI app
-app = FastAPI(title="AI Law Firm", version="0.1.0")
+app = FastAPI(title="AI Law Firm", version="0.1.0", lifespan=lifespan)
 
 app.include_router(health.router)
 app.include_router(reviews.router)

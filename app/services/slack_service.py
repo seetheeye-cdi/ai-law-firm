@@ -33,13 +33,13 @@ class SlackService:
         )
 
     async def notify_lawyer(self, review_request, ai_review):
+        dashboard_url = f"{settings.BASE_URL}/web/reviews/{review_request.id}"
         text = (
             f"📋 *새로운 법률 검토 요청*\n\n"
             f"*요청 ID:* `{review_request.id}`\n"
             f"*원본 메시지:*\n> {review_request.original_message[:500]}\n\n"
             f"*AI 검토 결과:*\n{ai_review.content[:1000]}\n\n"
-            f"API를 통해 승인 또는 반려해주세요.\n"
-            f"`POST /api/v1/reviews/{review_request.id}/approve`"
+            f"<{dashboard_url}|🔗 대시보드에서 검토하기>"
         )
         await self.default_client.chat_postMessage(
             channel=settings.LAWYER_NOTIFICATION_CHANNEL,
